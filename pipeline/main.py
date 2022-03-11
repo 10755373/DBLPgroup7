@@ -22,7 +22,7 @@ def run_pipeline(input_path):
 if __name__ == "__main__":
     inputs = run_pipeline("data/train.csv")
     print("writing data...")
-    inputs.toPandas().set_index("input_id").to_csv("test_output.csv")
+    inputs.toPandas().set_index("input_id").to_csv("output/test_output.csv")
 
 # TODO: train model and run on test inputs
 # do this in a scalable way i. e. using pyspark (DO NOT CONVERT TO PANDAS OR NUMPY!)
