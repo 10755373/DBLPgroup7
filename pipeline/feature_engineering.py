@@ -28,6 +28,7 @@ DATA_COLUMNS = [
     "journal_full",
     "journal",
     "source_type",
+    "original_id",
 ]
 
 
