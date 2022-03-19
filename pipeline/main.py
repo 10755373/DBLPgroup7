@@ -2,6 +2,7 @@ from spark import create_spark_session
 from load_data import load_data, load_inputs, merge_inputs_with_data
 from data_cleaning import clean_data
 from feature_engineering import do_feature_engineering
+from data_swapping import swap_data
 
 
 def run_pipeline(input_path):
@@ -11,9 +12,11 @@ def run_pipeline(input_path):
     data = load_data(spark)
     inputs = load_inputs(input_path, spark)
     print("cleaning data...")
-    data = clean_data(data, spark)
+    data_cleaned = clean_data(data)
+    print("swapping data...")
+    data_swapped = swap_data(data_cleaned)    
     print("merging inputs with data...")
-    inputs = merge_inputs_with_data(inputs, data)
+    inputs = merge_inputs_with_data(inputs, data_swapped)
     print("doing feature engineering...")
     inputs = do_feature_engineering(inputs, spark)
     return inputs

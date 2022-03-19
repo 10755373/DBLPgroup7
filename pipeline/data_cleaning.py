@@ -65,36 +65,4 @@ def clean_data(sdf):
     sdf = clean_year(sdf)
     sdf = cleanup(sdf)
     # sdf = lemmatize(sdf)
-
-# function to check whether author is correctly placed in pauthor column or not
-def check_author(sdf):
-    authorsdf1 = sdf.withColumn('wordCount_author', fn.size(fn.split(fn.col('pauthor'), ' ')))
-    authorsdf1 = authorsdf1.withColumn('aut1_bool', fn.when((authorsdf1.pauthor.contains(r'|') | (fn.col('wordCount_author') < 5)), 1).otherwise(0))
-    authorsdf1 = authorsdf1.withColumn('aut_bool', fn.when((fn.col('aut1_bool') == 1), 1).otherwise(0))   
-    authorsdf1 = authorsdf1.drop('aut1_bool')
-    return authorsdf1
-
-# swap author if needed
-def swap_author(sdf):
-    bc = sdf.withColumn('author', fn.when(fn.col('aut_bool') == 1, fn.col('pauthor')).otherwise(fn.col('ptitle')))
-    return bc
-
-# swap title if needed
-def swap_title(sdf):
-    bc = sdf.withColumn('title', fn.when(fn.col('aut_bool') == 1, fn.col('ptitle')).otherwise(fn.col('pauthor')))
-    return bc
-
-# function to call for swap functions
-def swap_values(sdf):
-    sdf = swap_author(sdf)
-    sdf = swap_title(sdf)
     return sdf
-
-
-
-
-
-
-
-
-
