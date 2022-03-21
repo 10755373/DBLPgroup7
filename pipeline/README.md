@@ -1,7 +1,3 @@
-run with
-`python main.py`
+# run with
 
-"
-group6
-P0mJAF1l
-"
+`python main.py`

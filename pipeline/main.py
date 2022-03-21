@@ -21,7 +21,7 @@ def run_pipeline(input_path):
     return inputs
 
 
-if __name__ == "__main__":
+def prepare_submission():
     train = run_pipeline("data/train.csv")
     validation = run_pipeline("data/validation_hidden.csv")
     test = run_pipeline("data/test_hidden.csv")
@@ -33,10 +33,14 @@ if __name__ == "__main__":
     preds_v.toPandas().to_csv("output/val.csv")
     preds_t.toPandas().to_csv("output/test.csv")
 
-    # inputs.toPandas().set_index("input_id").to_csv("output/test_output.csv")
 
-# TODO: train model and run on test inputs
-# do this in a scalable way i. e. using pyspark (DO NOT CONVERT TO PANDAS OR NUMPY!)
-# see for example:
-# https://hackernoon.com/building-a-machine-learning-model-with-pyspark-a-step-by-step-guide-1z2d3ycd
-# try a few different models
+def run_experiment():
+    inputs = run_pipeline("data/train.csv")
+    train, val = inputs.randomSplit([0.7, 0.3])
+    model = train_model(train)
+    preds = predict(model, val)
+    evaluate(preds)  # this prints the accuracy (ctrl-f for accuracy in the log)
+
+
+if __name__ == "__main__":
+    run_experiment()
