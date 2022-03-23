@@ -26,7 +26,7 @@ def swap_author_title(sdf, spark):
     sdf = sdf.withColumnRenamed("new_title", "ptitle")
     return sdf
 
-
+# normalize special characters, make lowercase and trim excessive spaces
 def normalize_special_characters(sdf, spark):
     str_columns = [    
     "peditor",
@@ -38,33 +38,37 @@ def normalize_special_characters(sdf, spark):
     "journal",  
     "source_type", 
     ]
-    for col in str_columns:
-        # sdf = sdf.withColumn(col, f.regexp_replace(col, "[^0-9a-zA-Z]+", " "))    
-        # sdf = sdf.withColumn(col, f.regexp_replace(col, "[^0-9a-zA-Z]+", " "))
-        # sdf = sdf.withColumn(col, f.regexp_replace(f.encode(col, 'utf-8'), "[^0-9a-zA-Z]+", " "))
-        sdf = sdf.withColumn(col + "_cleaned", f.regexp_replace(f.encode(col, 'utf-8'), "[^a-zA-Z]", " ")) 
-        # sdf = sdf.withColumn(col + "_cleaned" + "_new", re.sub("\s\s+", " ", col))       
-        # # '^[a-zA-Z]+$' | [^0-9a-zA-Z]+ | [^a-zA-Z]
-        # sdf = sdf.drop(col)  
-        # spark.sql(""" SELECT regexp_replace(decode(encode('Ä??ABCDE', 'utf-8'), 'ascii'), "[^\t\n\r\x20-\x7F]","")  x """).show(false)
-        sdf = sdf.drop(col)
-        sdf = sdf.withColumnRenamed(col + "_cleaned", col)
-        sdf = sdf.withColumn(col + "_cleaned_new", f.regexp_replace(col, "\s\s+", " "))
-        sdf = sdf.drop(col)
-        sdf = sdf.withColumnRenamed(col + "_cleaned_new", col)
+    for col_name in str_columns:
+        sdf = sdf.withColumn(col_name, f.regexp_replace(f.encode(col_name, 'utf-8'), "[^a-zA-Z]", " ")) 
+        sdf = sdf.withColumn(col_name, f.regexp_replace(col_name, "\s\s+", " "))
+        sdf = sdf.withColumn(col_name, f.lower(f.col(col_name)))
+        sdf = sdf.withColumn(col_name, f.trim(f.col(col_name)))
     return sdf
 
-
-
-
+# make year absolute
 def clean_year(sdf, spark):
-    return sdf.withColumn("pyear", f.abs(sdf.pyear))
+    sdf = sdf.withColumn("pyear", f.abs(sdf.pyear))
+    sdf = sdf.withColumn("pyear", f.ceil(sdf.pyear))
+    return sdf
 
+# transform source type into right format
+def clean_source_type(sdf):
+    sdf = sdf.withColumn("test_source", f.when(f.length(f.col("source_type")) <= 4, "book")
+                .when(f.length(f.col("source_type")) <= 7, "article")
+                .when(f.length(f.col("source_type")) <= 9, "phdthesis")
+                .when(f.length(f.col("source_type")) <= 12, "incollection")
+                .when(f.length(f.col("source_type")) <= 13, "inproceedings")
+                .otherwise(f.col("source_type")))
+    sdf = sdf.drop("source_type")
+    sdf = sdf.withColumnRenamed("test_source", "source_type")
+    return sdf
 
+# function to call all data
 def clean_data(sdf, spark):
     # sdf = normalize_special_characters(sdf, spark) # use this only if you'd like to check the accuracy when cleaning before swapping 
                                                     # (wouldn't recommend this because it'll cause problems during the swapping procedure)
     sdf = clean_year(sdf, spark)
     sdf = swap_author_title(sdf, spark)
     sdf = normalize_special_characters(sdf, spark) # use this to clean code after swapping
+    sdf = clean_source_type(sdf)
     return sdf
