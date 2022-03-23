@@ -1,4 +1,5 @@
 import pyspark.sql.functions as f
+# import re
 
 
 def swap_author_title(sdf, spark):
@@ -27,12 +28,33 @@ def swap_author_title(sdf, spark):
 
 
 def normalize_special_characters(sdf, spark):
-    # TODO implement this
-    str_columns = []
+    str_columns = [    
+    "peditor",
+    "pauthor",
+    "ptitle",
+    "book_title_full", 
+    "book_title", 
+    "journal_full", 
+    "journal",  
+    "source_type", 
+    ]
     for col in str_columns:
-        # normalize column
-        pass
+        # sdf = sdf.withColumn(col, f.regexp_replace(col, "[^0-9a-zA-Z]+", " "))    
+        # sdf = sdf.withColumn(col, f.regexp_replace(col, "[^0-9a-zA-Z]+", " "))
+        # sdf = sdf.withColumn(col, f.regexp_replace(f.encode(col, 'utf-8'), "[^0-9a-zA-Z]+", " "))
+        sdf = sdf.withColumn(col + "_cleaned", f.regexp_replace(f.encode(col, 'utf-8'), "[^a-zA-Z]", " ")) 
+        # sdf = sdf.withColumn(col + "_cleaned" + "_new", re.sub("\s\s+", " ", col))       
+        # # '^[a-zA-Z]+$' | [^0-9a-zA-Z]+ | [^a-zA-Z]
+        # sdf = sdf.drop(col)  
+        # spark.sql(""" SELECT regexp_replace(decode(encode('Ä??ABCDE', 'utf-8'), 'ascii'), "[^\t\n\r\x20-\x7F]","")  x """).show(false)
+        sdf = sdf.drop(col)
+        sdf = sdf.withColumnRenamed(col + "_cleaned", col)
+        sdf = sdf.withColumn(col + "_cleaned_new", f.regexp_replace(col, "\s\s+", " "))
+        sdf = sdf.drop(col)
+        sdf = sdf.withColumnRenamed(col + "_cleaned_new", col)
     return sdf
+
+
 
 
 def clean_year(sdf, spark):
@@ -40,7 +62,9 @@ def clean_year(sdf, spark):
 
 
 def clean_data(sdf, spark):
-    sdf = normalize_special_characters(sdf, spark)
+    # sdf = normalize_special_characters(sdf, spark) # use this only if you'd like to check the accuracy when cleaning before swapping 
+                                                    # (wouldn't recommend this because it'll cause problems during the swapping procedure)
     sdf = clean_year(sdf, spark)
     sdf = swap_author_title(sdf, spark)
+    sdf = normalize_special_characters(sdf, spark) # use this to clean code after swapping
     return sdf
